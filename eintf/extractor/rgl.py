@@ -31,6 +31,3 @@ class RGL:
         date = tds[2].text.strip("\\r\\n").strip()
         url = tds[3].select_one("a").attrs["href"]
         return {"title": title, "date": date, "url": url}
-
-
-print(RGL().articles())

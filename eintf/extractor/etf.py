@@ -32,6 +32,3 @@ class ETF:
         author = article.select_one("a[rel=author]").text
         url = title_.attrs["href"]
         return {"title": title, "date": date, "url": url, "author": author}
-
-
-print(ETF().article("https://etf2l.org/2022/12/03/6v6-autumn-2022-playoffs-tiebreakers/"))
