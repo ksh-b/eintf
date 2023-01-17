@@ -12,15 +12,15 @@ class Map:
     __categories_url = "https://tf2maps.net/downloads/categories/{}/?page={}&{}"
 
     def downloads(self, page=1, extras=""):
-        return self.__extract_featured(str.format(self.__categories_url, page, extras))
+        return self.__extract(str.format(self.__categories_url, page, extras))
 
     def featured_downloads(self):
-        return self.__extract_featured(self.__featured_url)
+        return self.__extract(self.__featured_url)
 
     def category(self, category, page=1, extras=""):
-        return self.__extract_featured(str.format(self.__categories_url, category, page, extras))
+        return self.__extract(str.format(self.__categories_url, category, page, extras))
 
-    def __extract_featured(self, url):
+    def __extract(self, url):
         response = requests.get(url, headers=user_agent())
         soup = BeautifulSoup(response.text, 'html.parser')
         map_items = soup.select(".structItem--resource")
