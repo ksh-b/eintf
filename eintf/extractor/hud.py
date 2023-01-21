@@ -16,6 +16,7 @@ class Hud:
         return self.__extract(self.__outdated_url)
 
     def __extract(self, url):
+        extract_dict = {}
         response = requests.get(url, headers=user_agent())
         rows = response.text.split('\n')
         rows = filter(lambda l: "|" in l and "---" not in l, rows)
@@ -27,7 +28,10 @@ class Hud:
         headers = re.sub('[^a-zA-Z0-9|\n]', ' ', headers.replace('&', '|').lower()).split('|')
         headers = list(map(lambda t: t.replace(' ', '-'), map(lambda h: h.strip(), headers)))
         #
-        return json.dumps(list(map(lambda r: self.__hud_info(r, headers), rows)), indent=4)
+        for row in rows:
+            hud_info = self.__hud_info(row, headers)
+            extract_dict[hud_info[0]] = hud_info[1]
+        return json.dumps(extract_dict, indent=4)
 
     def __hud_info(self, row, headers) -> (str, dict):
         columns = row.split("|")
@@ -50,4 +54,4 @@ class Hud:
         hud_discussion = columns[7].split(") (")
         columns[7] = hud_discussion
 
-        return {columns[0]: dict(zip(headers, columns))}
+        return columns[0], dict(zip(headers, columns))
