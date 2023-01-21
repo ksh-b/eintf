@@ -21,10 +21,14 @@ class Map:
         return self.__extract_featured(str.format(self.__categories_url, category, page, extras))
 
     def __extract_featured(self, url):
+        extract_dict = {}
         response = requests.get(url, headers=user_agent())
         soup = BeautifulSoup(response.text, 'html.parser')
         map_items = soup.select(".structItem--resource")
-        return json.dumps(list(map(lambda m: self.__map_info(m), map_items)), indent=4)
+        for map_item in map_items:
+            map_info = self.__map_info(map_item)
+            extract_dict[map_info[0]] = map_info[1]
+        return json.dumps(extract_dict, indent=4)
 
     def __map_info(self, map_item):
         try:
@@ -44,17 +48,16 @@ class Map:
         tag_line = map_item.select(".structItem-resourceTagLine")[0].text
         updated_date = map_item.select(".u-concealed")[0].text
         downloads = map_item.select(".structItem-metaItem--downloads dd")[0].text
-        return {
-            name: {
-                "name": name,
-                "version": version,
-                "tag-line": tag_line,
-                "url": url,
-                "thumbnail": thumbnail,
-                "username": username,
-                "category": category,
-                "start-date": start_date,
-                "updated-date": updated_date,
-                "downloads": downloads,
-            }
+        return url.split("/")[2].split(".")[0], {
+            "name": name,
+            "version": version,
+            "tag-line": tag_line,
+            "url": url,
+            "thumbnail": thumbnail,
+            "username": username,
+            "category": category,
+            "start-date": start_date,
+            "updated-date": updated_date,
+            "downloads": downloads,
         }
+
