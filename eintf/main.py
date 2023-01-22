@@ -1,8 +1,16 @@
+import time
+
+import schedule
 from fastapi import FastAPI
 from starlette.responses import JSONResponse
 
 from .extractor.hud import Hud
 from .extractor.map import Map
+from pymongo import MongoClient
+
+""
+client = MongoClient('mongodb://127.0.0.1:27017/')
+db = client['eintf']
 
 app = FastAPI()
 
@@ -14,12 +22,12 @@ async def exception_handler(request, exc):
 
 @app.get("/")
 def read_root():
-    return {"Hello": "World"}
+    return {}
 
 
 @app.get("/huds")
 def active_huds():
-    return Hud().active()
+    return db.get_collection("huds").find_one()["active"]
 
 
 @app.get("/huds/outdated")
@@ -40,3 +48,14 @@ def active_hud(hud):
 @app.get("/maps/featured")
 def maps(property):
     return Map().featured_downloads()
+
+
+def update_data():
+    db.get_collection("huds").update_one({"active": Hud().active()}, upsert=True)
+
+
+# schedule.every(30).minutes.do(update_data)
+#
+# while True:
+#     schedule.run_pending()
+#     time.sleep(1)
