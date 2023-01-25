@@ -8,7 +8,7 @@ util_repos = [
     ("mastercomfig", "mastercomfig"),
     ("JarateKing", "CleanTF2plus"),
     ("CriticalFlaw", "TF2HUD.Editor"),
-    ("Narcha","DemoMan"),
+    ("Narcha", "DemoMan"),
 ]
 
 
