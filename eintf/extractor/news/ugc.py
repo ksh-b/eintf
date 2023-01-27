@@ -1,9 +1,10 @@
 import json
+import time
 
 import requests
 from bs4 import BeautifulSoup
 
-from eintf.common.helper import user_agent
+from eintf.common.helper import user_agent, convert_time
 
 
 class UGC:
@@ -19,13 +20,8 @@ class UGC:
     def article(self, url):
         response = requests.get(url, headers=user_agent())
         soup = BeautifulSoup(response.text, 'html.parser')
-        body = soup.select_one(".item")
-        title = body.select_one(".item .item-title").text.strip()
-        date_author = body.select_one("h5").text.strip()
-        date = date_author.split("by")[0].strip()
-        author = date_author.split("by")[1].strip() if "by" in date_author else ""
-        html_content = str(body)
-        return json.dumps({"title": title, "author": author, "date": date, "avatar": "", "content": html_content})
+        time.sleep(0.5)
+        return str(soup.select_one(".item"))
 
     def articles(self, game_format="highlander"):
         response = requests.get(
@@ -33,13 +29,21 @@ class UGC:
             headers=user_agent()
         )
         soup = BeautifulSoup(response.text, 'html.parser')
-        article_list = soup.select(".item")
+        article_list = soup.select(".item")[:10]
         return json.dumps(list(map(self.parse_article, article_list)))
 
     def parse_article(self, article):
         title = article.select_one(".item-title b").text
         date_author = article.select_one("h6").text
-        date = date_author.split(" by ")[0].strip()
+        date = convert_time(date_author.split(" by ")[0].strip(), "%a, %b %d, %Y")
         author = date_author.split(" by ")[1].strip() if " by " in date_author else ""
         url = article.select_one("figure a").attrs["href"]
-        return {"title": title, "date": date, "url": url, "author": author}
+        url = f"https://www.ugcleague.com/{url}"
+        return {
+            "title": title,
+            "date": date,
+            "author": author,
+            "url": url,
+            "content": self.article(url)
+        }
+

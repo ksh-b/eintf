@@ -1,28 +1,27 @@
 import json
+import time
 
 import requests
 from bs4 import BeautifulSoup
 
-from eintf.common.helper import user_agent
+from eintf.common.helper import user_agent, convert_time
 
 
 class RGL:
 
-    def article(self, article_id):
-        response = requests.get(f"https://rgl.gg/Public/Articles/Default.aspx?a={article_id}", headers=user_agent())
+    def article(self, url):
+        response = requests.get(f"https://rgl.gg/Public/Articles/{url}", headers=user_agent())
         soup = BeautifulSoup(response.text, 'html.parser')
         body = soup.select_one("div[id*=divArticle]")
-        title = body.select_one("span[id*=lblHeader]").text
         author = body.select_one("span[id*=lblWriterName]").text
-        date = body.select_one("span[id*=lblDateLive]").text
-        avatar = body.select_one("img[id*=imgWriterAvatar]").attrs["src"]
         html_content = str(body.select_one(".text-center+div[style]+div"))
-        return json.dumps({"title": title, "author": author, "date": date, "avatar": avatar, "content": html_content})
+        time.sleep(0.5)
+        return {"author": author, "content": html_content}
 
     def articles(self):
         response = requests.get("https://rgl.gg/Public/Articles/ArticlesList.aspx", headers=user_agent())
         soup = BeautifulSoup(response.text, 'html.parser')
-        article_list = soup.select(".table tr")
+        article_list = soup.select(".table tr")[:10]
         return json.dumps(list(map(self.parse_article, article_list)))
 
     def parse_article(self, article):
@@ -30,4 +29,13 @@ class RGL:
         title = tds[1].text.strip("\\r\\n").strip()
         date = tds[2].text.strip("\\r\\n").strip()
         url = tds[3].select_one("a").attrs["href"]
-        return {"title": title, "date": date, "url": url}
+        article_ = self.article(url)
+        return {
+            "title": title,
+            "date": convert_time(date, "%m/%d/%Y"),
+            "author": article_["author"],
+            "url": f"https://rgl.gg/Public/Articles/{url}",
+            "content": article_["content"]
+        }
+
+
