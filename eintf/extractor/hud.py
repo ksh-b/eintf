@@ -51,8 +51,8 @@ class Hud:
 
         columns = list(map(lambda c: c.strip("()"), columns))
 
-        repository = columns[4].split(") (")
-        columns[4] = repository
+        repositories = columns[4].split(") (")
+        columns[4] = repositories
 
         hud_discussion = columns[7].split(") (")
         columns[7] = hud_discussion
