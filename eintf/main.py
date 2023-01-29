@@ -1,16 +1,16 @@
-import time
-
-import schedule
 from fastapi import FastAPI
 from starlette.responses import JSONResponse
 
+from .common.helper import now
+from .db.db import get_collection, update_collection
+from .extractor.git import latest_release, all_releases
 from .extractor.hud import Hud
-from .extractor.map import Map
-from pymongo import MongoClient
+from .extractor.news.all import get_news, update_all
 
-""
-client = MongoClient('mongodb://127.0.0.1:27017/')
-db = client['eintf']
+# from common.helper import now
+# from extractor.git import latest_release, all_releases
+# from extractor.hud import Hud
+# from extractor.news.all import get_news
 
 app = FastAPI()
 
@@ -26,36 +26,66 @@ def read_root():
 
 
 @app.get("/huds")
+@app.get("/huds/active")
 def active_huds():
-    return db.get_collection("huds").find_one()["active"]
-
-
-@app.get("/huds/outdated")
-def outdated_huds():
-    return Hud().outdated()
-
-
-@app.get("/huds/outdated/{hud}")
-def outdated_hud(hud):
-    return Hud().outdated()["data"][hud]
+    return get_collection("huds", key="active")
 
 
 @app.get("/huds/{hud}")
 def active_hud(hud):
-    return Hud().active()["data"][hud]
+    return get_collection("huds", key="active")["data"][hud]
 
 
-@app.get("/maps/featured")
-def maps(property):
-    return Map().featured_downloads()
+@app.get("/tools")
+def tools():
+    return get_collection("tools")
 
 
-def update_data():
-    db.get_collection("huds").update_one({"active": Hud().active()}, upsert=True)
+@app.get("/tools/{tool_}")
+def tool(tool_):
+    return get_collection("tools", key="data")["data"][tool_]
 
 
-# schedule.every(30).minutes.do(update_data)
-#
-# while True:
-#     schedule.run_pending()
-#     time.sleep(1)
+@app.get("/news")
+def news_all():
+    return get_news()
+
+
+@app.get("/news?sources={sources}")
+def news(source):
+    return get_news(source.split(","))
+
+
+@app.get("/update/{it}")
+def update_data(it):
+    if it == "huds":
+        last_update_date = latest_release("Hypnootize", "TF2-HUDs-Megalist")[1]["published_at"]
+        db_update_date = get_collection("huds", {"status": "active"}, key="last_update")
+        if db_update_date == last_update_date:
+            return {"success": False, "message": "Already updated"}
+        update_collection(
+            "huds",
+            {"status": "active"},
+            {"status": "active", "last_update": last_update_date, "data": Hud().active()},
+            True
+        )
+        return {"success": True, "message": last_update_date}
+
+    elif it == "tools":
+        db_update_date = get_collection("tools", {"last_update": {"$gt": now() - 86400}})
+        if db_update_date:
+            return {"success": False, "message": "Already updated"}
+        update_collection(
+            "tools",
+            {"filter": "all"},
+            {"last_update": now(), "data": all_releases()},
+            True
+        )
+        return {"success": True, "message": now()}
+
+    elif it == "news":
+        updated = update_all()
+        if updated == -1:
+            return {"success": False, "message": "Already updated"}
+        else:
+            return {"success": True, "message": updated}
