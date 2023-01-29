@@ -5,9 +5,11 @@ import requests
 from bs4 import BeautifulSoup
 
 from eintf.common.helper import user_agent, convert_time
+from eintf.db.db import get_collection
 
 
 class ETF:
+    skip_next = False
 
     def article(self, url):
         response = requests.get(url, headers=user_agent())
@@ -21,11 +23,18 @@ class ETF:
         response = requests.get("https://etf2l.org", headers=user_agent())
         soup = BeautifulSoup(response.text, 'html.parser')
         article_list = soup.select(".post")
-        return json.dumps(list(map(self.parse_article, article_list)))
+        articles_ = list(filter(lambda it: it, map(self.parse_article, article_list)))
+        self.skip_next = False
+        return articles_
 
     def parse_article(self, article):
         title_ = article.select_one("h1 a[href]")
         title = title_.text
+        last_known_title = get_collection("news", {"filter": "etf"})[0]["title"]
+        if title == last_known_title:
+            self.skip_next = True
+        if self.skip_next:
+            return {}
         date = article.select_one("h4").text.strip()
         author = article.select_one("a[rel=author]").text
         url = title_.attrs["href"]
@@ -34,7 +43,5 @@ class ETF:
             "date": convert_time(date, "%B %d, %Y"),
             "author": author,
             "url": url,
-            "content": self.article(url)
+            "content": self.article(url).strip().replace("\n","")
         }
-
-print(ETF().articles())
