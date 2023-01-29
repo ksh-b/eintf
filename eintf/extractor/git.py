@@ -14,6 +14,16 @@ util_repos = [
 
 def latest_release(owner, repo):
     release = requests.get(f"https://api.github.com/repos/{owner}/{repo}/releases/latest").json()
+    if "message" in release and release["message"] == "Not Found":
+        release = requests.get(f"https://api.github.com/repos/{owner}/{repo}/commits/master").json()
+        return repo, {
+            "name": release["commit"]["message"],
+            "published_at": release["commit"]["committer"]["date"],
+            "assets": list(f"https://github.com/{owner}/{repo}/archive/refs/heads/master.zip"),
+            "body": "",
+            "owner": release["author"]["login"],
+            "source": f"https://github.com/{owner}/{repo}",
+        }
     return repo, {
         "name": release["name"],
         "published_at": release["published_at"],
@@ -38,9 +48,9 @@ def append_to_dict(repo):
 
 
 def all_releases():
-    for r in util_repos:
-        append_to_dict(r)
-    return json.dumps(release_dict, indent=4)
-
-
-print(all_releases())
+    try:
+        for r in util_repos:
+            append_to_dict(r)
+        return {"success": True, "data": release_dict}
+    except Exception as e:
+        return {"success": False, "data": str(e)}
