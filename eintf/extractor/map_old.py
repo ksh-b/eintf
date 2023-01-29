@@ -21,13 +21,14 @@ class Map:
         return self.__extract(str.format(self.__categories_url, category, page, extras))
 
     def __extract(self, url):
+        extract_dict = {}
         response = requests.get(url, headers=user_agent())
         soup = BeautifulSoup(response.text, 'html.parser')
         map_items = soup.select(".structItem--resource")
         for map_item in map_items:
             map_info = self.__map_info(map_item)
             extract_dict[map_info[0]] = map_info[1]
-        return json.dumps(extract_dict, indent=4)
+        return extract_dict
 
     def __map_info(self, map_item):
         try:
