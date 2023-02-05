@@ -21,4 +21,4 @@ requires = ["poetry-core"]
 build-backend = "poetry.core.masonry.api"
 
 [tool.poetry.scripts]
-eintf = "eintf.eintf:run"
+eintf = "eintf.main:run"

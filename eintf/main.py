@@ -7,11 +7,11 @@ from starlette.responses import JSONResponse
 
 import uvicorn
 
-from db.db import get_collection
-from extractor.git import Tool
-from extractor.huds_megalist import HudsMegalist
-from extractor.map.map_crawler import MapSpider
-from extractor.news.news import News
+from .db.db import get_collection
+from .extractor.git import Tool
+from .extractor.huds_megalist import HudsMegalist
+from .extractor.map.map_crawler import MapSpider
+from .extractor.news.news import News
 
 app = FastAPI()
 
@@ -105,8 +105,7 @@ def run():
         required=False,
     )
     args = parser_.parse_args()
-
-    if "-s" in sys.argv and args.s:
+    if "-s" in sys.argv:
         uvicorn.run("eintf.main:app", host="0.0.0.0", port=8000, reload=True)
     elif "-u" in sys.argv and args.u:
         update_data(args.u)
