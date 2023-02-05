@@ -1,16 +1,17 @@
+import argparse
+import sys
+
 from fastapi import FastAPI
+from fastapi.params import Query
 from starlette.responses import JSONResponse
 
-from .common.helper import now
-from .db.db import get_collection, update_collection
-from .extractor.git import latest_release, all_releases
-from .extractor.hud import Hud
-from .extractor.news.all import get_news, update_all
+import uvicorn
 
-# from common.helper import now
-# from extractor.git import latest_release, all_releases
-# from extractor.hud import Hud
-# from extractor.news.all import get_news
+from db.db import get_collection
+from extractor.git import Tool
+from extractor.huds_megalist import HudsMegalist
+from extractor.map.map_crawler import MapSpider
+from extractor.news.news import News
 
 app = FastAPI()
 
@@ -25,67 +26,88 @@ def read_root():
     return {}
 
 
-@app.get("/huds")
-@app.get("/huds/active")
+@app.get("/huds/megalist")
 def active_huds():
-    return get_collection("huds", key="active")
+    return list(get_collection("huds").find({}, {"_id": 0}))
 
 
-@app.get("/huds/{hud}")
+@app.get("/huds/megalist/{hud}")
 def active_hud(hud):
-    return get_collection("huds", key="active")["data"][hud]
+    return list(get_collection("huds").find_one({"name": hud}, {"_id": 0}))
 
 
 @app.get("/tools")
 def tools():
-    return get_collection("tools")
+    return list(get_collection("tools").find({}, {"_id": 0}))
 
 
 @app.get("/tools/{tool_}")
 def tool(tool_):
-    return get_collection("tools", key="data")["data"][tool_]
+    return list(get_collection("tools").find({"name": tool_}, {"_id": 0}))
 
 
 @app.get("/news")
-def news_all():
-    return get_news()
+def news(source: str = Query(None, alias="source"), page: int = Query(1, alias="page")):
+    if source is None:
+        source = {"$ne": None}
+    else:
+        source = {"$in": source.split(",")}
+    return list(get_collection("news").find(
+        {"source": source}, {"_id": 0}
+    ).sort("date", -1).limit(10).skip(10 * (page - 1)))
 
 
-@app.get("/news?sources={sources}")
-def news(source):
-    return get_news(source.split(","))
+@app.get("/maps")
+def maps(
+        author=Query(None, alias="author"),
+        category=Query(None, alias="category"),
+        page: int = Query(1, alias="page")
+):
+    if author is None:
+        author = {"$ne": None}
+    if category is None:
+        category = {"$ne": None}
+    return list(get_collection("maps").find({
+        "author": author,
+        "category": category,
+    }, {"_id": 0}).limit(10).skip(10 * (page - 1)))
 
 
-@app.get("/update/{it}")
 def update_data(it):
     if it == "huds":
-        last_update_date = latest_release("Hypnootize", "TF2-HUDs-Megalist")[1]["published_at"]
-        db_update_date = get_collection("huds", {"status": "active"}, key="last_update")
-        if db_update_date == last_update_date:
-            return {"success": False, "message": "Already updated"}
-        update_collection(
-            "huds",
-            {"status": "active"},
-            {"status": "active", "last_update": last_update_date, "data": Hud().active()},
-            True
-        )
-        return {"success": True, "message": last_update_date}
+        return HudsMegalist().update()
 
     elif it == "tools":
-        db_update_date = get_collection("tools", {"last_update": {"$gt": now() - 86400}})
-        if db_update_date:
-            return {"success": False, "message": "Already updated"}
-        update_collection(
-            "tools",
-            {"filter": "all"},
-            {"last_update": now(), "data": all_releases()},
-            True
-        )
-        return {"success": True, "message": now()}
+        return Tool().update()
 
     elif it == "news":
-        updated = update_all()
-        if updated == -1:
-            return {"success": False, "message": "Already updated"}
-        else:
-            return {"success": True, "message": updated}
+        return News().update()
+
+    elif it == "maps":
+        return MapSpider().update()
+
+
+if __name__ == "__main__":
+    parser_ = argparse.ArgumentParser(description="TF2 api")
+    parser_.add_argument(
+        "-s",
+        metavar="start",
+        help="Starts the api server",
+        required=False,
+        action="store_const",
+        const=None,
+    )
+    parser_.add_argument(
+        "-u",
+        metavar="update",
+        type=str,
+        default=None,
+        help="updates data in db",
+        required=False,
+    )
+    args = parser_.parse_args()
+
+    if "-s" in sys.argv and args.s:
+        uvicorn.run("eintf.main:app", host="0.0.0.0", port=8000, reload=True)
+    elif "-u" in sys.argv and args.u:
+        update_data(args.u)
