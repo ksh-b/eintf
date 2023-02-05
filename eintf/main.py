@@ -86,8 +86,7 @@ def update_data(it):
     elif it == "maps":
         return MapSpider().update()
 
-
-if __name__ == "__main__":
+def run():
     parser_ = argparse.ArgumentParser(description="TF2 api")
     parser_.add_argument(
         "-s",
