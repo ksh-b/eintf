@@ -1,6 +1,6 @@
 [tool.poetry]
 name = "eintf"
-version = "0.0.2"
+version = "0.0.3"
 description = ""
 authors = ["kshib <ksyko@pm.me>"]
 readme = "README.md"
@@ -21,4 +21,4 @@ requires = ["poetry-core"]
 build-backend = "poetry.core.masonry.api"
 
 [tool.poetry.scripts]
-wanda = "eintf.eintf:run"
+eintf = "eintf.eintf:run"
