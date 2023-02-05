@@ -1,22 +1,18 @@
-import json
 import re
+
 import requests
 
 from eintf.common.helper import user_agent
+from eintf.db.db import insert_to_collection, get_collection
 
 
-class Hud:
+class HudsMegalist:
     __active_url = "https://raw.githubusercontent.com/Hypnootize/TF2-HUDs-Megalist/master/Active%20Huds%20List.md"
-    __outdated_url = "https://raw.githubusercontent.com/Hypnootize/TF2-HUDs-Megalist/master/Inactive%20Huds%20List.md"
 
-    def active(self):
+    def update(self):
         return self.__extract(self.__active_url)
 
-    def outdated(self):
-        return self.__extract(self.__outdated_url)
-
     def __extract(self, url):
-        extract_dict = {}
         try:
             response = requests.get(url, headers=user_agent())
             rows = response.text.split('\n')
@@ -29,15 +25,17 @@ class Hud:
             headers = re.sub('[^a-zA-Z0-9|\n]', ' ', headers.replace('&', '|').lower()).split('|')
             headers = list(map(lambda t: t.replace(' ', '-'), map(lambda h: h.strip(), headers)))
             #
+
             for row in rows:
-                hud_info = self.__hud_info(row, headers)
-                extract_dict[hud_info[0]] = hud_info[1]
-            return {"success": True, "data": extract_dict}
+                self.__hud_info(row, headers)
+            return {"success": True}
         except Exception as e:
-            return {"success": False, "data": str(e)}
+            return {"success": False}
 
     def __hud_info(self, row, headers) -> (str, dict):
         columns = row.split("|")
+        headers = list(map(lambda x: x.replace('hud-', ''), headers))
+        headers = list(map(lambda x: x.replace('direct-download', 'download'), headers))
         creator_maintainer = columns[1]
         creator = ''
         maintainer = ''
@@ -56,5 +54,7 @@ class Hud:
 
         hud_discussion = columns[7].split(") (")
         columns[7] = hud_discussion
+        hud_json = dict(zip(headers, columns))
 
-        return columns[0].strip(), dict(zip(headers, columns))
+        if get_collection("huds").find_one({"name": hud_json['name']}) is None:
+            insert_to_collection("huds", hud_json)
