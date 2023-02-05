@@ -91,10 +91,9 @@ def run():
     parser_.add_argument(
         "-s",
         metavar="start",
-        help="Starts the api server",
-        required=False,
-        action="store_const",
-        const=None,
+        nargs="?",
+        const="0.0.0.0:8000",
+        help="start server",
     )
     parser_.add_argument(
         "-u",
@@ -106,6 +105,7 @@ def run():
     )
     args = parser_.parse_args()
     if "-s" in sys.argv:
-        uvicorn.run("eintf.main:app", host="0.0.0.0", port=8000, reload=True)
+        address = args.s.split(":")
+        uvicorn.run("eintf.main:app", host=address[0], port=int(address[1]), reload=True)
     elif "-u" in sys.argv and args.u:
         update_data(args.u)
