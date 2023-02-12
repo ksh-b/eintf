@@ -73,18 +73,19 @@ def maps(
     }, {"_id": 0}).limit(10).skip(10 * (page - 1)))
 
 
-def update_data(it):
-    if it == "huds":
-        return HudsMegalist().update()
+def update_data(it: str):
+    if "huds" in it.split(","):
+        HudsMegalist().update()
 
-    elif it == "tools":
-        return Tool().update()
+    elif "tools" in it.split(","):
+        Tool().update()
 
-    elif it == "news":
-        return News().update()
+    elif "news" in it.split(","):
+        News().update()
 
-    elif it == "maps":
-        return MapSpider().update()
+    elif "maps" in it.split(","):
+        MapSpider().update()
+
 
 def run():
     parser_ = argparse.ArgumentParser(description="TF2 api")
