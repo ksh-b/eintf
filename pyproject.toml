@@ -1,6 +1,6 @@
 [tool.poetry]
 name = "eintf"
-version = "0.0.6"
+version = "0.0.7"
 description = ""
 authors = ["kshib <ksyko@pm.me>"]
 readme = "README.md"
