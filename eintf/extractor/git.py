@@ -48,6 +48,7 @@ class Tool:
         }
 
     def update(self):
+        print("Updating tools db...")
         try:
             for r in util_repos:
                 insert_to_collection("tools", self.latest_release(r))

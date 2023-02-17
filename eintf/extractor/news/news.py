@@ -11,6 +11,7 @@ valid_sources = ["etf", "rgl", "ugc"]
 
 class News:
     def update(self, sources=None):
+        print("Updating news db...")
         process = CrawlerProcess()
         if sources is None:
             sources = valid_sources

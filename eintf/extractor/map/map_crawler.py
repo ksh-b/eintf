@@ -54,6 +54,7 @@ class MapSpider(scrapy.Spider):
         )
 
     def update(self):
+        print("Updating maps db...")
         process = CrawlerProcess()
         spider = MapSpider
         process.crawl(spider)
