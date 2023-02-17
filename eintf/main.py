@@ -107,6 +107,6 @@ def run():
     args = parser_.parse_args()
     if "-s" in sys.argv:
         address = args.s.split(":")
-        uvicorn.run("eintf.main:app", host=address[0], port=int(address[1]), reload=True)
+        uvicorn.run("eintf.main:app", host=address[0], port=int(address[1]), reload=False)
     elif "-u" in sys.argv and args.u:
         update_data(args.u)
